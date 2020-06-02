@@ -1,0 +1,120 @@
+---
+title: "Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(ggplot2)
+
+# read final data
+dt <- fread('../../gen/analysis/temp/preclean.csv')
+```
+
+## Some rudimentary analysis in Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button in RStudio,a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
+
+You can also **knit** the document from the command line, see the example in the `makefile`.
+
+
+```{r, include=FALSE}
+
+
+data <- dt[dt$polarity != 0 & dt$subjectivity != 0 & dt$source %in% c( '<a href=""""http://twitter.com/download/android"""" rel=""""nofollow"""">Twitter for Android</a>','<a href=""""http://twitter.com/download/iphone"""" rel=""""nofollow"""">Twitter for iPhone</a>','<a href=""""https://mobile.twitter.com"""" rel=""""nofollow"""">Twitter Web App</a>' )]
+
+smartphone <- dt[dt$source %in% c( '<a href=""""http://twitter.com/download/android"""" rel=""""nofollow"""">Twitter for Android</a>','<a href=""""http://twitter.com/download/iphone"""" rel=""""nofollow"""">Twitter for iPhone</a>') & dt$polarity != 0 & dt$subjectivity != 0, ]
+  
+desktop <- dt[dt$source == '<a href=""""https://mobile.twitter.com"""" rel=""""nofollow"""">Twitter Web App</a>' & dt$polarity != 0 & dt$subjectivity != 0, ]
+
+#Smartphone
+
+mean_pol_smartphone <- mean(smartphone$polarity)
+mean_sub_smartphone <- mean(smartphone$subjectivity)
+
+sd_pol_smartphone <- sd(smartphone$polarity)
+sd_sub_smartphone <- sd(smartphone$subjectivity)
+
+#Desktop
+mean_pol_desktop <- mean(desktop$polarity)
+mean_sub_desktop <- mean(desktop$subjectivity)
+
+sd_pol_desktop <- sd(desktop$polarity)
+sd_sub_desktop <- sd(desktop$subjectivity)
+
+
+
+smartphone$type <- 'smartphone'
+desktop$type <- 'desktop'
+
+# and combine into your new data frame vegLengths
+together <- rbind(smartphone, desktop)
+```
+
+### Summary Desktop
+
+```{r}
+summary(desktop)
+```
+
+## Summary Smartphone 
+
+```{r}
+summary(smartphone)
+```
+
+
+### Plots
+
+```{r}
+# Histrogram polarity
+ggplot(together, aes(x=polarity, fill = type)) +
+  geom_histogram(alpha=0.5, position="identity", bins = 30) + ggtitle('Histogram polarity') +
+  scale_fill_manual(values = c("desktop" = "black", "smartphone" = "blue"))
+```
+
+```{r}
+# Histrogram subjectivity
+ggplot(together, aes(x=subjectivity, fill = type)) +
+  geom_histogram(alpha=0.5, position="identity", bins = 30) + ggtitle('Histogram subjectivity') +
+  scale_fill_manual(values = c("desktop" = "black", "smartphone" = "green"))
+
+```
+
+```{r}
+# Boxplot polarity
+boxplot(polarity ~ type,
+        data=together,
+        ylab="polarity", height = 10)
+```
+Desktop:      mean = 0.4888, sd = 0.3738
+Smartphone:   mean = 0.4720, sd = 0.3855
+
+```{r}
+# Boxplot subjectivity
+boxplot(subjectivity ~ type,
+        data=together,
+        ylab="subjectivity", height = 10)
+```
+Desktop:      mean = 0.6887, sd = 0.2762
+Smartphone:   mean = 0.7035, sd = 0.2693
+
+### Compare means T-test 
+
+```{r}
+# T-test difference polarity 
+t.test(smartphone$polarity, desktop$polarity)
+```
+
+Conclusion: Since the p-value is higher than 0.05, there is nog significant difference in polarity between smartphone and desktop users. 
+
+```{r}
+# T-test difference subjectivity
+t.test(smartphone$subjectivity, desktop$subjectivity)
+```
+
+Conclusion: Since the p-value is higher than 0.05, there is nog significant difference in subjectivity between smartphone and desktop users. 
